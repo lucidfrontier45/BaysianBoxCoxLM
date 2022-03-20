@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "boxcox_lm"
+version = "0.1.0"
+description = ""
+authors = ["Du Shiqiao <lucidfrontier.45@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.11"
+cmdstanpy = "^1.0.1"
+scipy = "^1.8.0"
+numpyro = "^0.9.1"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+flake8 = "^4.0.1"
+black = "^22.1.0"
+mypy = "^0.941"
+ipykernel = "^6.9.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
