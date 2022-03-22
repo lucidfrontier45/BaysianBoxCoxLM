@@ -1,3 +1,4 @@
+import time
 from typing import Optional
 
 import numpy as np
@@ -11,20 +12,32 @@ app = typer.Typer(name="baysian_boxcox_regression", add_completion=False)
 
 @app.command()
 def main(
-    n_data: int = 50,
-    w_s: float = 2.0,
-    sigma_beta: float = 2.0,
-    lambda_s: float = 1.0,
-    n_warmup: int = 500,
-    n_samples: int = 1000,
-    n_chains: int = 4,
+    n_data: int = typer.Option(50, help="number of input data"),
+    w_s: float = typer.Option(2.0, help="parameter of the w prior"),
+    sigma_beta: float = typer.Option(2.0, help="parameter of the sigma prior"),
+    lambda_s: float = typer.Option(2.0, help="parameter of the lambda prior"),
+    n_warmup: int = typer.Option(500, help="MCMC warmup samples"),
+    n_samples: int = typer.Option(1000, help="MCMC samples"),
+    n_chains: int = typer.Option(4, help="MCMC chains"),
     seed: Optional[int] = None,
     backend: BackendType = typer.Option(BackendType.NumPyro, case_sensitive=False),
 ):
 
-    numpyro.set_host_device_count(4)
+    if seed is None:
+        seed = int(time.time())
 
-    seed = 0
+    if backend == BackendType.NumPyro:
+        import multiprocessing
+
+        import jax.random
+
+        numpyro.set_host_device_count(multiprocessing.cpu_count())
+        key = jax.random.PRNGKey(seed)
+        train_seed, predict_seed = jax.random.split(key)
+    else:
+        train_seed = seed
+        predict_seed = seed + 100
+
     np.random.seed(seed=seed)
     N = n_data
     D = 2
@@ -44,9 +57,9 @@ def main(
         n_chains=n_chains,
         backend=backend,
     )
-    model.fit(X, y)
+    model.fit(X, y, seed=train_seed)
     model.summary()
-    posterior_y = model.predict(X).mean(0)
+    posterior_y = model.predict(X, seed=predict_seed).mean(0)
 
     for (yy, pyy) in zip(y, posterior_y):
         print(yy, pyy)
