@@ -41,12 +41,8 @@ parameters {
 
 transformed parameters {
     /* ... declarations ... statements ... */
-    vector[N] h;
     vector[N] z;
-    vector[N_new] h_new;
-    h = X * w;
-    z = boxcox(y, lambda, N);
-    h_new = X_new * w;
+    z = (boxcox(y, lambda, N) - X * w ) / sigma;
 }
 
 model {
@@ -54,14 +50,15 @@ model {
     w ~ normal(0.0, w_s);
     sigma ~ exponential(1.0 / sigma_beta);
     lambda ~ normal(1.0, lambda_s);
-    z ~ normal(h, sigma);
-    target += (lambda - 1.0)*log(y);
+    z ~ normal(0.0, 1.0);
+    target += (lambda - 1.0) * log(y);
+    target += -N*log(sigma) ;
 }
 
 generated quantities {
     /* ... declarations ... statements ... */
     vector[N_new] yp;
     if (N_new > 0){
-        yp = inv_boxcox(to_vector(normal_rng(h_new, sigma)), lambda, N_new);
+        yp = inv_boxcox(to_vector(normal_rng(X_new * w, sigma)), lambda, N_new);
     }
 }
